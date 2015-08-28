@@ -24,34 +24,27 @@ class Comments:
         # set to a specific sub if needed
         # r is the praw Reddit Object
         self.r = r
+        self.db = Database()
 
     def get_comments_to_parse(self):
-        # gets the subreddit, usually /r/all
-        pass       
-#        self.comments = praw.helpers.comment_stream(self.r, "all", limit = 1000, verbosity = 1)
-        # retrieves the comments from this subreddit
-        # the limit is set to None, but is actually 1024
-#self.comments = sub.get_comments(limit = None)
-    
+        #uses pushift.io to perform a search of "QuoteIt!"
+        request = requests.get('https://api.pushshift.io/reddit/search?q=%22QuoteIt!%22&limit=100')  
+        json = request.json()
+        self.comments = json['data']
+
     def search_comments(self):
         log.debug("Searching comments")
         
-        db = Database()
         results = []
-        
-        request = requests.get('https://api.pushshift.io/reddit/search?q=%22QuoteIt!%22&limit=100')  
-        json = request.json()
-        comments = json['data']
-
         # goes through each comment and 
         # searches for the keyword string
-        for comment in comments:
+        for comment in self.comments:
             # convert to praw Comment object
             comment = praw.objects.Comment(self.r, comment)
             quote, user = self.parse_for_keywords(comment.body)
             ID = comment.id
             
-            if quote and not db.lookup_ID("ID_parent", ID):
+            if quote and not self.db.lookup_ID("ID_parent", ID):
                 results.append((comment, quote, user)) 
         
         return results
@@ -77,7 +70,7 @@ class Comments:
 class Respond:
 
     STATIC_REPLY_TEXT = "Quoting {user}: {quote}\n\n"\
-                        "Quote suggested by {poster}."\
+                        "Quote suggested by {poster}"\
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
                         "^submitted ^to ^/r/Quotes!"
@@ -293,6 +286,7 @@ def main():
         while True:    
             try:
                 com = Comments(r)
+                com.get_comments_to_parse()
                 results = com.search_comments()
                 
                 posts = Respond(r)
@@ -306,6 +300,10 @@ def main():
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
                 time.sleep(10)
+                continue
+
+            except Exception as err:
+                log.warning(err)
                 continue
 
     except KeyboardInterrupt:
