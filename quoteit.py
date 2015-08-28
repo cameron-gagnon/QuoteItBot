@@ -74,7 +74,8 @@ class Respond:
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
                         "^submitted ^to ^/r/Quotes!"
-
+    UPVOTE_THRESHOLD = 3
+    
     def __init__(self, r):
         self.r = r
         self.db = Database()
@@ -128,8 +129,11 @@ class Respond:
         comments = r.get_comments()
         
         for comment in comments:
-            if comment.score > 10:
-                log.debug("Found post over 10 votes")
+            if comment.score > self.UPVOTE_THRESHOLD:
+# INSERT CHECK THAT THE POST HAS NOT ALREADY BEEN SUBMITTED TO /R/QUOTES!!!
+                log.debug("Found post over " + str(self.UPVOTE_THRESHOLD) +
+                          " votes")
+                
                 self.post_to_quotes(comment)
 
     def post_to_quotes(self, comment):
@@ -138,26 +142,37 @@ class Respond:
         match = re.findall('Quoting (/u/[\w_-]*): ("[\w\s.;!@#$%^&*()+=:{}\[\]\\\|\?><~`/,-]*")', 
                            text,
                            re.IGNORECASE)
-         
-        username = match[0][0]
-        quote = match [0][1]
+        try: 
+            log.debug("Match is: ")
+            print(match) 
+            username = match[0][0]
+            quote = match [0][1]
         
-        title = "[QuoteItBot]" + quote + " " + username
+        except IndexError:
+            log.debug("Not an actual quote comment, index error returned")
+            self.db.insert_post(comment.id) 
+            return 
+
+        title = "[QuoteItBot] " + quote + " - " + username
+        # gets the submission link and appends the specific parent 
+        # comment id to form the permalink                  [3:] takes off "t1_"
+        formatted_url = comment.link_url + comment.parent_id[3:]
+        body = "[Original quote source](" + formatted_url + ")."
 
         try:
             log.debug("Submitting quote: " + title)
-            self.r.submit("Quotes", title)
+            self.r.submit("Quotes", title, text = body)
+            
             log.debug("Submission sucessful!")
+            self.db.insert_post(comment.id)
 
-        except praw.errors.RateLimitExceeded:
+        except praw.errors.RateLimitExceeded as error:
             log.debug("Rate limit exceeded for posting, must sleep for "
                       "{} mins".format(float(error.sleep_time / 60)))
             time.sleep(error.sleep_time)
             # try to reply to the comment again
-            self.r.submit("Quotes", title)
-        
+            self.r.submit("Quotes", title, body)
             log.debug("Submission sucessful!")
-
 
 
 ###########################################################################
@@ -169,7 +184,7 @@ class Database:
         self.cur = self.sql.cursor()
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS\
-                          quotes(ID TEXT)')
+                          quotes(ID TEXT, ID_post TEXT)')
         self.sql.commit()
 
     def insert(self, ID):
@@ -179,13 +194,24 @@ class Database:
         self.cur.execute('INSERT INTO quotes (ID) VALUES (?)', [ID])
         self.sql.commit()
 
-        log.debug("Inserted " + str(ID) + " into parent database!")
+        log.debug("Inserted " + str(ID) + " of comment into database!")
+
+    def insert_post(self, ID):
+        self.cur.execute('INSERT INTO quotes (ID_post) VALUES (?)', [ID])
+        self.sql.commit()
+
+        log.debug("Inserted " + str(ID) + " of post into database.")
 
     def lookup_ID(self, ID):
         """
         See if the ID has already been added to the database.
         """
         self.cur.execute('SELECT * FROM quotes WHERE ID=?', [ID])
+        result = self.cur.fetchone()
+        return result
+
+    def lookup_post(self, ID):
+        self.cur.execute('SELECT * FROM quotes WHERE Id_post=?', [ID])
         result = self.cur.fetchone()
         return result
 
@@ -216,7 +242,7 @@ def config_logging():
 
     # apparently on AWS-EC2 requests is used instead of urllib3
     # so we have to silence this again... oh well.
-    logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('requests').setLevel(logging.CRITICAL)
 
     # set format for output to file
     formatFile = logging.Formatter(fmt='%(asctime)-s %(levelname)-6s: '\
