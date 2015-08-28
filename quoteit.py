@@ -44,7 +44,7 @@ class Comments:
             quote, user = self.parse_for_keywords(comment.body)
             ID = comment.id
             
-            if quote and not self.db.lookup_ID("ID_parent", ID):
+            if quote and not self.db.lookup_ID(ID):
                 results.append((comment, quote, user)) 
         
         return results
@@ -88,7 +88,7 @@ class Respond:
                 log.warning("Comment was deleted")
                 pass
             
-            self.db.insert_parent(comment.id)
+            self.db.insert(comment.id)
 
     def reply_quote(self, comment, quote, user):
         comment_author = str(comment.author)
@@ -165,28 +165,28 @@ class Database:
 
     def __init__(self):
         # connect to and create DB if not created yet
-        self.sql = sqlite3.connect('quoteIDs.db')
+        self.sql = sqlite3.connect('IDs.db')
         self.cur = self.sql.cursor()
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS\
-                          quotes(ID_parent TEXT, ID_reply, upvotes INT)')
+                          quotes(ID TEXT)')
         self.sql.commit()
 
-    def insert_parent(self, ID):
+    def insert(self, ID):
         """
         Add ID to comment database so we know we already replied to it
         """
-        self.cur.execute('INSERT INTO quotes (ID_parent) VALUES (?)', [ID])
+        self.cur.execute('INSERT INTO quotes (ID) VALUES (?)', [ID])
         self.sql.commit()
 
         log.debug("Inserted " + str(ID) + " into parent database!")
 
-    def lookup_ID(self, ID_type, ID):
+    def lookup_ID(self, ID):
         """
         See if the ID has already been added to the database.
         """
-        self.cur.execute('SELECT * FROM quotes WHERE ?=?', [ID_type, ID])
-        result = self.cur.fetchall()
+        self.cur.execute('SELECT * FROM quotes WHERE ID=?', [ID])
+        result = self.cur.fetchone()
         return result
 
 
