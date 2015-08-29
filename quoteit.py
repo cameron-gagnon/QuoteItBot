@@ -146,12 +146,11 @@ class Respond:
     def post_to_quotes(self, comment):
         text = comment.body
         # pull out the username and quote from our old post
-        print(text)
         match = re.findall(self.regex, text)
 
         try: 
             log.debug("Match is: ")
-            print(match) 
+            log.debug(str(match))
             username = match[0][0]
             quote = match [0][1]
         
@@ -161,13 +160,13 @@ class Respond:
             return 
 
         title = "[QuoteItBot] " + quote + " - " + username
-        # gets the submission link and appends the specific parent 
-        # comment id to form the permalink                  [3:] takes off "t1_"
+        # gets lots of submission data and pieces it together so we can have the premalink to the top level comment
+                        # base url                 what subreddit we in?
+        formatted_url = "https://reddit.com/r/" + str(comment.subreddit) + "/comments/" +\
+                        comment.link_id[3:] + "/" + comment.link_title + "/" + comment.parent_id[3:]           
+                        # id of the link in sub     title of submission        id of the parent comment of the 
+                                                                               #quoteitbot one
 
-####HAVE TO CHECK IF POST IS COMMENT OR TOP LEVEL OR WHAT
-#formatted_url
-
-        formatted_url = comment.link_url + comment.parent_id[3:]
         body = "[Original quote source](" + formatted_url + ")."
 
         try:
