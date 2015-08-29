@@ -80,8 +80,15 @@ class Respond:
                         "Quote suggested by {poster}"\
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
-                        "^submitted ^to ^/r/Quotes!"
-    UPVOTE_THRESHOLD = 1
+                        "^submitted ^to ^/r/Quotes!"\
+                        "\n\n___\n\n"\
+                        "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
+                        "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username'"
+#"^| [^About ^me](https://www.reddit.com/r/BotGoneWild/comments/"\
+#"3ifrj5/information_about_botgonewild_here/?ref=share&ref_source=link) "\
+
+
+    UPVOTE_THRESHOLD = 10
     
     def __init__(self, r):
         self.r = r
@@ -125,7 +132,7 @@ class Respond:
         except praw.errors.HTTPException as error:
             log.debug("HTTPError when replying. Sleeping for 10 seconds")
             log.debug(error)
-            time.sleep(10)
+            time.sleep(30)
 
     def check_votes(self):
         log.debug("Checking votes")
@@ -227,16 +234,6 @@ class Database:
 
 
 ###########################################################################
-    def format_string(self):
-        reply_footer = "\n___\n"\
-                       "^| [^About ^me](https://www.reddit.com/r/BotGoneWild/comments/"\
-                       "3ifrj5/information_about_botgonewild_here/?ref=share&ref_source=link) "\
-                       "^| [^Code](https://github.com/cameron-gagnon/botgonewild) "\
-                       "^| [^Click ^to ^be ^removed ^from ^queries](https://www.reddit.com/"\
-                       "message/compose/?to=BotGoneWild&subject=Blacklist&message=Please%20"\
-                       "remove%20me%20from%20your%20queries.) "\
-                       '^| ^Syntax: ^"Has ^/u/username ^gone ^wild?" '\
-
 ##############################################################################
 # Makes stdout and stderr print to the logging module
 def config_logging():
@@ -330,12 +327,12 @@ def main():
                 posts.check_votes()
                 
                 log.debug("Sleeping...")
-                time.sleep(10)
+                time.sleep(30)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
-                time.sleep(10)
+                time.sleep(30)
                 continue
 
             except Exception as err:
