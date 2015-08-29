@@ -25,12 +25,17 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
+        self.regex = re.compile('QuoteIt! ("[\D\d]*")[\s\-/]*u/([\w-]*)',
+                            flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
         #uses pushift.io to perform a search of "QuoteIt!"
-        request = requests.get('https://api.pushshift.io/reddit/search?q=%22QuoteIt!%22&limit=100')  
-        json = request.json()
-        self.comments = json['data']
+        with requests.Session() as s:
+            request = s.get('https://api.pushshift.io/reddit/search?q'\
+                            '=%22QuoteIt!%22&limit=100')
+
+            json = request.json()
+            self.comments = json['data']
 
     def search_comments(self):
         log.debug("Searching comments")
@@ -39,11 +44,14 @@ class Comments:
         # goes through each comment and 
         # searches for the keyword string
         for comment in self.comments:
-            # convert to praw Comment object
+            # convert regular json comment to praw Comment object
             comment = praw.objects.Comment(self.r, comment)
+            # parse for them keywords yo!
             quote, user = self.parse_for_keywords(comment.body)
-            ID = comment.id
             
+            ID = comment.id
+            # quote will be true when we match a properly formatted keyword call
+            # the db lookup is to make sure we don't reply to the same post
             if quote and not self.db.lookup_ID(ID):
                 results.append((comment, quote, user)) 
         
@@ -51,8 +59,7 @@ class Comments:
 
     def parse_for_keywords(self, comment):
         # search for keyword string
-        match = re.findall(r'QuoteIt! ("[\w\s.;!@#$%^&*()+=:{}\[\]\\\|\?><~`/,-]*")[\s/]*u/([\w_-]*)',
-                           str(comment), re.IGNORECASE)
+        match = re.findall(self.regex, str(comment))
         try:
             # match will be None if we don't 
             # find the keyword string
@@ -74,10 +81,12 @@ class Respond:
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
                         "^submitted ^to ^/r/Quotes!"
-    UPVOTE_THRESHOLD = 3
+    UPVOTE_THRESHOLD = 1
     
     def __init__(self, r):
         self.r = r
+        self.regex = re.compile('Quoting (/u/[\w_-]*): ("[\D\d]*")',
+                                flags = re.IGNORECASE | re.UNICODE)
         self.db = Database()
 
     def reply(self, results):
@@ -97,7 +106,8 @@ class Respond:
                                                      quote = quote,
                                                      poster = "/u/"+comment_author)
         
-        log.debug("Replying to " + comment_author)
+        log.debug("Replying to " + comment_author +
+                  " with quote " + quote + " from user " + user)
         
         try:
             comment.reply(reply_string)
@@ -117,8 +127,6 @@ class Respond:
             log.debug(error)
             time.sleep(10)
 
-        # insert reply id so we can check our upvotes later
-
     def check_votes(self):
         log.debug("Checking votes")
         # get our quoteitbot
@@ -129,19 +137,18 @@ class Respond:
         comments = r.get_comments()
         
         for comment in comments:
-            if comment.score > self.UPVOTE_THRESHOLD:
-# INSERT CHECK THAT THE POST HAS NOT ALREADY BEEN SUBMITTED TO /R/QUOTES!!!
-                log.debug("Found post over " + str(self.UPVOTE_THRESHOLD) +
-                          " votes")
-                
+            # comment ID here is the comment ID of QuoteItBot's comment with the
+            # quote in it
+            if (comment.score > self.UPVOTE_THRESHOLD) and not\
+                self.db.lookup_post(comment.id):
                 self.post_to_quotes(comment)
 
     def post_to_quotes(self, comment):
         text = comment.body
         # pull out the username and quote from our old post
-        match = re.findall('Quoting (/u/[\w_-]*): ("[\w\s.;!@#$%^&*()+=:{}\[\]\\\|\?><~`/,-]*")', 
-                           text,
-                           re.IGNORECASE)
+        print(text)
+        match = re.findall(self.regex, text)
+
         try: 
             log.debug("Match is: ")
             print(match) 
@@ -156,6 +163,10 @@ class Respond:
         title = "[QuoteItBot] " + quote + " - " + username
         # gets the submission link and appends the specific parent 
         # comment id to form the permalink                  [3:] takes off "t1_"
+
+####HAVE TO CHECK IF POST IS COMMENT OR TOP LEVEL OR WHAT
+#formatted_url
+
         formatted_url = comment.link_url + comment.parent_id[3:]
         body = "[Original quote source](" + formatted_url + ")."
 
@@ -330,6 +341,7 @@ def main():
 
             except Exception as err:
                 log.warning(err)
+                time.sleep(30)
                 continue
 
     except KeyboardInterrupt:
