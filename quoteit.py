@@ -152,6 +152,11 @@ class Respond:
 
     def post_to_quotes(self, comment):
         text = comment.body
+
+        # check for nsfw sub that the comment was posted on
+        if Filter.filter_nsfw(comment):
+            return False
+        
         # pull out the username and quote from our old post
         match = re.findall(self.regex, text)
 
@@ -164,7 +169,7 @@ class Respond:
         except IndexError:
             log.debug("Not an actual quote comment, index error returned")
             self.db.insert_post(comment.id) 
-            return 
+            return False
 
         title = "[QuoteItBot] " + quote + " - " + username
         # gets lots of submission data and pieces it together so we can have the premalink to the top level comment
@@ -190,6 +195,19 @@ class Respond:
             # try to reply to the comment again
             self.r.submit("Quotes", title, body)
             log.debug("Submission sucessful!")
+
+
+class Filter:
+
+    def __init__(self, r):
+        self.r = r
+
+    @classmethod
+    def filter_nsfw(cls, comment):
+        subreddit_ID = comment.subreddit_id
+        # returns true if the subreddit is over18, AKA NSFW.
+        return r.get_info(thing_id(subreddit_ID).over18
+
 
 
 ###########################################################################
