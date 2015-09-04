@@ -8,6 +8,7 @@ QuoteIt! "This is a quote to quote" /u/username
 
 #Issues
 **My quote didn't get a reply, what happened??**
+
 Several things could have happened. For starters, the following are likely:
 1) The server the bot is running on is down and/or the bot has crashed due to an unexpected error/bug.
 2) The format of the post is incorrect and does not include all the necessary formatting required for the bot to respond. If you believe the format is correct, contact me at /u/camerongagnon with the content of your original post so I can provide feedback, or check on the reason for this discrepancy.
