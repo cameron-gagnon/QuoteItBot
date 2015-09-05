@@ -1,4 +1,3 @@
-# QuoteItBot
 #FAQ
 
 ##How to Summon
