@@ -15,6 +15,6 @@ Several things could have happened. For starters, the following are likely:
 * 3) The subreddit you are posting from may have banned all bots, or just specifically QuoteItBot.
 * 4) If for some reason QuoteItBot comments too much, it may be rate limited and require a larger time delay between posting comments. This would cause a delay, but not a complete lack of response.
 
-####What happens when a post from QuoteItBot gets upvoted beyond a certain point?**
+###What happens when a post from QuoteItBot gets upvoted beyond a certain point?
 
 When a post receives more than a certain threshold of upvotes, the quote will be posted on /r/Quotes. This signifies that enough Redditors value this quote - that they essentially 'approved' it to be shared with others. Currently the threshold is set as a static value, but is considered being changed by how popular a post/subreddit is and setting the threshold based on that value. When browsing /r/Quotes, any posts beginning with "[QuoteItBot]" are posted by the bot, and have received the specific amount of upvotes.
