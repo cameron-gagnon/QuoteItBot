@@ -25,8 +25,8 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('QuoteIt! ("[\D\d]*")[\s\-/]*u/([\w-]*)',
-                            flags = re.IGNORECASE | re.UNICODE)
+        self.regex = re.compile('quoteit! ("[\d\d]*")[\s\-/]*u/([\w-]*)',
+                            flags = re.ignorecase | re.unicode)
 
     def get_comments_to_parse(self):
         #uses pushift.io to perform a search of "QuoteIt!"
@@ -77,23 +77,21 @@ class Comments:
 class Respond:
 
     STATIC_REPLY_TEXT = "Quoting {user}: {quote}\n\n"\
-                        "Quote suggested by {poster}"\
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
                         "^submitted ^to ^/r/Quotes!"\
-                        "\n\n___\n\n"\
-                        "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
-                        "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username'"
-#"^| [^About ^me](https://www.reddit.com/r/BotGoneWild/comments/"\
-#"3ifrj5/information_about_botgonewild_here/?ref=share&ref_source=link) "\
-
-
+    FOOTER = "\n\n___\n\n"\
+             "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
+             "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
+             "^| [^About ^me]({link})"
+    SPAM_LINK = "http://bit.ly/1VvgsUB"
+    NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
-    
+    REGEX = re.compile('Quoting (/u/[\w_-]*): ("[\D\d]*")',
+                       flags = re.IGNORECASE | re.UNICODE)
+   
     def __init__(self, r):
         self.r = r
-        self.regex = re.compile('Quoting (/u/[\w_-]*): ("[\D\d]*")',
-                                flags = re.IGNORECASE | re.UNICODE)
         self.db = Database()
 
     def reply(self, results):
@@ -110,8 +108,8 @@ class Respond:
     def reply_quote(self, comment, quote, user):
         comment_author = str(comment.author)
         reply_string = self.STATIC_REPLY_TEXT.format(user = user,
-                                                     quote = quote,
-                                                     poster = "/u/"+comment_author)
+                                                     quote = quote) +\
+                       self.FOOTER.format(link = self.NON_SPAM_LINK)
         
         log.debug("Replying to " + comment_author +
                   " with quote " + quote + " from user " + user)
@@ -152,8 +150,10 @@ class Respond:
 
     def post_to_quotes(self, comment):
         text = comment.body
+        about_me_link = self.NON_SPAM_LINK
+       
         # pull out the username and quote from our old post
-        match = re.findall(self.regex, text)
+        match = re.findall(self.REGEX, text)
 
         try: 
             log.debug("Match is: ")
@@ -164,17 +164,29 @@ class Respond:
         except IndexError:
             log.debug("Not an actual quote comment, index error returned")
             self.db.insert_post(comment.id) 
-            return 
+            return False
+
+        parent_author = self.r.get_info(thing_id = comment.parent_id)
+        # check for nsfw sub that the comment was posted on
+        # apply shortened url to send the post directly to spam
+        if Filter.filter_nsfw(comment) and not
+           Filter.blacklisted_user(username) and not
+           Filter.blacklisted_user(parent_author.author):
+            about_me_link = self.SPAM_LINK
+        
 
         title = "[QuoteItBot] " + quote + " - " + username
-        # gets lots of submission data and pieces it together so we can have the premalink to the top level comment
+        # gets lots of submission data and pieces it together 
+        # so we can have the premalink to the top level comment
                         # base url                 what subreddit we in?
-        formatted_url = "https://reddit.com/r/" + str(comment.subreddit) + "/comments/" +\
-                        comment.link_id[3:] + "/" + comment.link_title + "/" + comment.parent_id[3:]           
-                        # id of the link in sub     title of submission        id of the parent comment of the 
-                                                                               #quoteitbot one
+        formatted_url = "https://reddit.com/r/" + str(comment.subreddit) +\
+                        "/comments/" + comment.link_id[3:] + "/" +\
+                        comment.link_title + "/" + comment.parent_id[3:]           
+                        # title of submission       id of the parent comment of the 
+                                                   # quoteitbot one
 
-        body = "[Original quote source](" + formatted_url + ")."
+        body = "[Original quote source](" + formatted_url + ")." +\
+                self.FOOTER.format(about_me_link)
 
         try:
             log.debug("Submitting quote: " + title)
@@ -192,6 +204,22 @@ class Respond:
             log.debug("Submission sucessful!")
 
 
+class Filter:
+
+    def __init__(self, r):
+        self.r = r
+        self.db = Database()
+    @classmethod
+    def filter_nsfw(cls, comment):
+        subreddit_ID = comment.subreddit_id
+        # returns true if the subreddit is over18, AKA NSFW.
+        return r.get_info(thing_id(subreddit_ID).over18
+
+
+    def blacklisted_user(cls, user):
+        # returns true if the user is in the database, AKA 'blacklisted'  
+        return self.db.lookup_user(user):
+
 ###########################################################################
 class Database:
 
@@ -201,7 +229,7 @@ class Database:
         self.cur = self.sql.cursor()
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS\
-                          quotes(ID TEXT, ID_post TEXT)')
+                          quotes(ID TEXT, ID_post TEXT, user TEXT)')
         self.sql.commit()
 
     def insert(self, ID):
@@ -232,6 +260,10 @@ class Database:
         result = self.cur.fetchone()
         return result
 
+    def lookup_user(self, user):
+        self.cur.execute('SELECT * FROM quotes WHERE user=?', [user])
+        result = self.cur.fetchone()
+        return result
 
 ###########################################################################
 ##############################################################################
