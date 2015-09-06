@@ -169,9 +169,10 @@ class Respond:
         parent_author = self.r.get_info(thing_id = comment.parent_id)
         # check for nsfw sub that the comment was posted on
         # apply shortened url to send the post directly to spam
-        if Filter.filter_nsfw(comment) and not
-           Filter.blacklisted_user(username) and not
-           Filter.blacklisted_user(parent_author.author):
+        f = Filter(self.r)
+        if f.filter_nsfw(comment) and not
+           f.blacklisted_user(username) and not
+           f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
         
 
@@ -209,17 +210,39 @@ class Filter:
     def __init__(self, r):
         self.r = r
         self.db = Database()
-    @classmethod
-    def filter_nsfw(cls, comment):
+
+    def filter_nsfw(self, comment):
         subreddit_ID = comment.subreddit_id
         # returns true if the subreddit is over18, AKA NSFW.
         return r.get_info(thing_id(subreddit_ID).over18
 
-
-    def blacklisted_user(cls, user):
-        # returns true if the user is in the database, AKA 'blacklisted'  
+    def blacklisted_user(self, user):
+        # returns true if the user is in the database, AKA 'blacklisted'
         return self.db.lookup_user(user):
 
+    def check_mail(self):
+        log.debug("Checking mail")
+        messages = self.r.get_unread(unset_has_mail = True, update_user = True)
+
+        for msg in messages:
+            if str(msg.author).lower() == "sahkuhnder" and\
+               msg.subject.lower() == "blacklist":
+                log.debug("Received message from Sahkuhnder")
+                # splits the message on spaces and '\n' as agreed upon by
+                # /u/sahkuhnder
+                users = msg.body.split()
+                # blacklists the users
+                self.blacklist_user(user)
+               
+
+    def blacklist_users(self, *users):
+        """
+           Inserts users into the database so they are then blacklisted
+        """
+        for user in user:
+            self.db.insert_user(user)
+                
+    
 ###########################################################################
 class Database:
 
@@ -246,6 +269,12 @@ class Database:
         self.sql.commit()
 
         log.debug("Inserted " + str(ID) + " of post into database.")
+
+    def insert_user(self, user):
+        self.cur.execute('INSERT INTO quotes (user) VALUES (?)', [user])
+        self.sql.commit()
+
+        log.debug("Inserted " + str(user) + "into blacklisted users")
 
     def lookup_ID(self, ID):
         """
