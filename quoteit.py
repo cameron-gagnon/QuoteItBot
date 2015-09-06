@@ -26,7 +26,7 @@ class Comments:
         self.r = r
         self.db = Database()
         self.regex = re.compile('quoteit! ("[\d\d]*")[\s\-/]*u/([\w-]*)',
-                            flags = re.ignorecase | re.unicode)
+                            flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
         #uses pushift.io to perform a search of "QuoteIt!"
@@ -79,7 +79,7 @@ class Respond:
     STATIC_REPLY_TEXT = "Quoting {user}: {quote}\n\n"\
                         "\n\n___\n\n"\
                         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
-                        "^submitted ^to ^/r/Quotes!"\
+                        "^submitted ^to ^/r/Quotes!"
     FOOTER = "\n\n___\n\n"\
              "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
              "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
@@ -88,7 +88,7 @@ class Respond:
     NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
     REGEX = re.compile('Quoting (/u/[\w_-]*): ("[\D\d]*")',
-                       flags = re.IGNORECASE | re.UNICODE)
+                       flags = re.IGNORECASE  | re.UNICODE)
    
     def __init__(self, r):
         self.r = r
@@ -170,8 +170,8 @@ class Respond:
         # check for nsfw sub that the comment was posted on
         # apply shortened url to send the post directly to spam
         f = Filter(self.r)
-        if f.filter_nsfw(comment) and not
-           f.blacklisted_user(username) and not
+        if f.filter_nsfw(comment) and not\
+           f.blacklisted_user(username) and not\
            f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
         
@@ -214,11 +214,11 @@ class Filter:
     def filter_nsfw(self, comment):
         subreddit_ID = comment.subreddit_id
         # returns true if the subreddit is over18, AKA NSFW.
-        return r.get_info(thing_id(subreddit_ID).over18
+        return r.get_info(thing_id(subreddit_ID).over18)
 
     def blacklisted_user(self, user):
         # returns true if the user is in the database, AKA 'blacklisted'
-        return self.db.lookup_user(user):
+        return self.db.lookup_user(user)
 
     def check_mail(self):
         log.debug("Checking mail")
@@ -391,13 +391,17 @@ def main():
                 time.sleep(30)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
+                import traceback
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
+                traceback.print_exc()
                 time.sleep(30)
                 continue
 
             except Exception as err:
+                import traceback
                 log.warning(err)
+                log.warning(traceback.print_exc())
                 time.sleep(30)
                 continue
 
