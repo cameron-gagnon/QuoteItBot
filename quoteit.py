@@ -25,7 +25,7 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\d\d]*")[\s\-/]*u/([\w-]*)',
+        self.regex = re.compile('quoteit! ("[\d\w]*")[\s\-/]*u/([\w-]*)',
                             flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
@@ -45,6 +45,7 @@ class Comments:
         # searches for the keyword string
         for comment in self.comments:
             # convert regular json comment to praw Comment object
+            comment['_replies'] = ''
             comment = praw.objects.Comment(self.r, comment)
             # parse for them keywords yo!
             quote, user = self.parse_for_keywords(comment.body)
@@ -252,12 +253,12 @@ class Database:
         self.cur = self.sql.cursor()
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS\
-                          quotes(ID TEXT, ID_post TEXT, user TEXT)')
+                          quotes(ID TEXT, ID_post TEXT, users TEXT)')
         self.sql.commit()
 
     def insert(self, ID):
         """
-        Add ID to comment database so we know we already replied to it
+            Add ID to comment database so we know we already replied to it
         """
         self.cur.execute('INSERT INTO quotes (ID) VALUES (?)', [ID])
         self.sql.commit()
@@ -271,14 +272,14 @@ class Database:
         log.debug("Inserted " + str(ID) + " of post into database.")
 
     def insert_user(self, user):
-        self.cur.execute('INSERT INTO quotes (user) VALUES (?)', [user])
+        self.cur.execute('INSERT INTO quotes (users) VALUES (?)', [user])
         self.sql.commit()
 
         log.debug("Inserted " + str(user) + "into blacklisted users")
 
     def lookup_ID(self, ID):
         """
-        See if the ID has already been added to the database.
+            See if the ID has already been added to the database.
         """
         self.cur.execute('SELECT * FROM quotes WHERE ID=?', [ID])
         result = self.cur.fetchone()
@@ -290,7 +291,7 @@ class Database:
         return result
 
     def lookup_user(self, user):
-        self.cur.execute('SELECT * FROM quotes WHERE user=?', [user])
+        self.cur.execute('SELECT * FROM quotes WHERE users=?', [user])
         result = self.cur.fetchone()
         return result
 
@@ -388,21 +389,21 @@ def main():
                 posts.check_votes()
                 
                 log.debug("Sleeping...")
-                time.sleep(30)
+                time.sleep(10)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
                 import traceback
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
                 traceback.print_exc()
-                time.sleep(30)
+                time.sleep(10)
                 continue
 
             except Exception as err:
                 import traceback
                 log.warning(err)
                 log.warning(traceback.print_exc())
-                time.sleep(30)
+                time.sleep(10)
                 continue
 
     except KeyboardInterrupt:
