@@ -226,9 +226,9 @@ class Filter:
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
-            if str(msg.author).lower() == "sahkuhnder" and\
+            if str(msg.author).lower() == "camerongagnon" and\
                msg.subject.lower() == "blacklist":
-                log.debug("Received message from Sahkuhnder")
+                log.debug("Received message from camerongagnon")
                 # splits the message on spaces and '\n' as agreed upon by
                 # /u/sahkuhnder
                 users = msg.body.split()
@@ -241,6 +241,7 @@ class Filter:
            Inserts users into the database so they are then blacklisted
         """
         for user in user:
+            log.debug("Inserting user: " + user + " into blacklist database")
             self.db.insert_user(user)
                 
     
