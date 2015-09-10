@@ -222,26 +222,31 @@ class Filter:
         return self.db.lookup_user(user)
 
     def check_mail(self):
-#log.debug("Checking mail")
+        log.debug("Checking mail")
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
             if str(msg.author).lower() == "camerongagnon" and\
                msg.subject.lower() == "blacklist":
                 log.debug("Received message from camerongagnon")
-                # splits the message on spaces and '\n' as agreed upon by
-                # /u/sahkuhnder
+                
+                # splits the message on spaces and '\n'
                 users = msg.body.split()
+                
                 # blacklists the users
-                self.blacklist_user(user)
+                self.blacklist_users(users)
+                    
+                # mark the message as read!
+                msg.mark_as_read()
+
+ 
                
 
-    def blacklist_users(self, *users):
+    def blacklist_users(self, users):
         """
            Inserts users into the database so they are then blacklisted
         """
-        for user in user:
-            log.debug("Inserting user: " + user + " into blacklist database")
+        for user in users:
             self.db.insert_user(user)
                 
     
@@ -276,7 +281,7 @@ class Database:
         self.cur.execute('INSERT INTO quotes (users) VALUES (?)', [user])
         self.sql.commit()
 
-        log.debug("Inserted " + str(user) + "into blacklisted users")
+        log.debug("Inserted " + str(user) + " into blacklisted users")
 
     def lookup_ID(self, ID):
         """
@@ -381,6 +386,7 @@ def main():
         db = Database()
         while True:    
             try:
+                Filter(r).check_mail()
                 com = Comments(r)
                 com.get_comments_to_parse()
                 results = com.search_comments()
