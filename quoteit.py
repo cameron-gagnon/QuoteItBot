@@ -222,7 +222,7 @@ class Filter:
         return self.db.lookup_user(user)
 
     def check_mail(self):
-        log.debug("Checking mail")
+#log.debug("Checking mail")
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
