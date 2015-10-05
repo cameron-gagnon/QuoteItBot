@@ -8,6 +8,7 @@ import logging
 import logging.handlers
 import requests
 import json
+import oauth
 
 from configparser import ConfigParser
 from sys import exit, stdout, stderr
@@ -365,19 +366,8 @@ class LoggerWriter:
 ###############################################################################
 def connect():
 #log.debug("Logging in...")
-    
-    r = praw.Reddit("browser-based:QuoteIt script for /r/quotes:v1.1 (by /u/camerongagnon)")
-    
-    config = ConfigParser()
-    config.read("login.txt")
-    
-    username = config.get("Reddit", "username")
-    password = config.get("Reddit", "password")
-    
-    r.login(username, password, disable_warning=True)
-    
+    r = oauth.login() 
     return r
-
 
 ###############################################################################
 def main():
