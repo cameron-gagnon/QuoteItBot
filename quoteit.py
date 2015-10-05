@@ -39,7 +39,7 @@ class Comments:
             self.comments = json['data']
 
     def search_comments(self):
-#log.debug("Searching comments")
+        log.debug("Searching comments")
         
         results = []
         # goes through each comment and 
@@ -135,7 +135,7 @@ class Respond:
             time.sleep(30)
 
     def check_votes(self):
-#log.debug("Checking votes")
+        log.debug("Checking votes")
         # get our quoteitbot
         r = self.r.get_redditor("QuoteItBot")
         # return all comments to see their scores
@@ -223,7 +223,7 @@ class Filter:
         return self.db.lookup_user(user)
 
     def check_mail(self):
-#log.debug("Checking mail")
+        log.debug("Checking mail")
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
@@ -385,7 +385,7 @@ def main():
                 posts.reply(results)
                 posts.check_votes()
                 
-#log.debug("Sleeping...")
+                log.debug("Sleeping...")
                 time.sleep(30)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
