@@ -26,7 +26,7 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\d\w]*")[\s\-/]*u/([\w-]*)',
+        self.regex = re.compile('quoteit! ("[\s\S]*")[\s\-/]*u/([\w-]*)',
                             flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
@@ -39,7 +39,7 @@ class Comments:
             self.comments = json['data']
 
     def search_comments(self):
-#log.debug("Searching comments")
+        log.debug("Searching comments")
         
         results = []
         # goes through each comment and 
@@ -49,6 +49,7 @@ class Comments:
             comment['_replies'] = ''
             comment = praw.objects.Comment(self.r, comment)
             # parse for them keywords yo!
+#            print(comment.body)
             quote, user = self.parse_for_keywords(comment.body)
             
             ID = comment.id
@@ -78,14 +79,13 @@ class Comments:
 
 class Respond:
 
-    STATIC_REPLY_TEXT = "Quoting {user}: {quote}\n\n"\
-                        "\n\n___\n\n"\
-                        "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will ^be "\
-                        "^submitted ^to ^/r/Quotes!"
+    REPLY_TEXT = "Quoting {user}: {quote}\n\n"
     FOOTER = "\n\n___\n\n"\
+             "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "\
+             "^be ^submitted ^to ^/r/Quotes! "\
              "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
-             "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
              "^| [^About ^me]({link})"
+#             "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
     SPAM_LINK = "http://bit.ly/1VvgsUB"
     NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
@@ -109,7 +109,7 @@ class Respond:
 
     def reply_quote(self, comment, quote, user):
         comment_author = str(comment.author)
-        reply_string = self.STATIC_REPLY_TEXT.format(user = user,
+        reply_string = self.REPLY_TEXT.format(user = user,
                                                      quote = quote) +\
                        self.FOOTER.format(link = self.NON_SPAM_LINK)
         
@@ -135,7 +135,7 @@ class Respond:
             time.sleep(30)
 
     def check_votes(self):
-#log.debug("Checking votes")
+        log.debug("Checking votes")
         # get our quoteitbot
         r = self.r.get_redditor("QuoteItBot")
         # return all comments to see their scores
@@ -223,7 +223,7 @@ class Filter:
         return self.db.lookup_user(user)
 
     def check_mail(self):
-#log.debug("Checking mail")
+        log.debug("Checking mail")
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
@@ -365,7 +365,7 @@ class LoggerWriter:
 
 ###############################################################################
 def connect():
-#log.debug("Logging in...")
+    log.debug("Logging in...")
     r = oauth.login() 
     return r
 
@@ -385,7 +385,7 @@ def main():
                 posts.reply(results)
                 posts.check_votes()
                 
-#log.debug("Sleeping...")
+                log.debug("Sleeping...")
                 time.sleep(30)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
