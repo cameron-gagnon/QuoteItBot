@@ -311,7 +311,7 @@ def config_logging():
     
     # set file logger
     rootLog = logging.getLogger('')
-    rootLog.setLevel(logging.DEBUG)
+    rootLog.setLevel(logging.WARNING)
     
     # make it so requests doesn't show up all the time in our output
     logging.getLogger('urllib3').setLevel(logging.WARNING)
