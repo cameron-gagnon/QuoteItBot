@@ -26,7 +26,7 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\s\S]*")[\s\-/]*u/([\w-]*)',
+        self.regex = re.compile('quoteit! ("[\s\S]*")[\s\-/]*[\/u\/]*([\w-]*])',
                             flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
