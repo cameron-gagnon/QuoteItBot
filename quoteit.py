@@ -26,11 +26,11 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\s\S]*")[\s\-/]*[\/u\/]*([\w-]*])',
+        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s\/u\/-]*([\w-]*)',
                             flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
-        #uses pushift.io to perform a search of "QuoteIt!"
+        #uses pushshift.io to perform a search of "QuoteIt!"
         with requests.Session() as s:
             request = s.get('https://api.pushshift.io/reddit/search?q'\
                             '=%22QuoteIt!%22&limit=100')
