@@ -109,7 +109,7 @@ class Respond:
     def reply_quote(self, comment, quote, user):
         comment_author = str(comment.author)
         reply_string = self.REPLY_TEXT.format(user = user,
-                                                     quote = quote) +\
+                                              quote = quote) +\
                        self.FOOTER.format(link = self.NON_SPAM_LINK)
         
         log.debug("Replying to " + comment_author +
