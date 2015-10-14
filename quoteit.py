@@ -27,7 +27,7 @@ class Comments:
         self.r = r
         self.db = Database()
         self.regex = re.compile('quoteit! ("[\s\S]*")*[\s\/u\/-]*([\w-]*)',
-                            flags = re.IGNORECASE | re.UNICODE)
+                                flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
         #uses pushshift.io to perform a search of "QuoteIt!"
@@ -39,7 +39,7 @@ class Comments:
             self.comments = json['data']
 
     def search_comments(self):
-        log.debug("Searching comments")
+#log.debug("Searching comments")
         
         results = []
         # goes through each comment and 
@@ -49,7 +49,6 @@ class Comments:
             comment['_replies'] = ''
             comment = praw.objects.Comment(self.r, comment)
             # parse for them keywords yo!
-#            print(comment.body)
             quote, user = self.parse_for_keywords(comment.body)
             
             ID = comment.id
@@ -135,7 +134,7 @@ class Respond:
             time.sleep(30)
 
     def check_votes(self):
-        log.debug("Checking votes")
+#log.debug("Checking votes")
         # get our quoteitbot
         r = self.r.get_redditor("QuoteItBot")
         # return all comments to see their scores
@@ -223,7 +222,7 @@ class Filter:
         return self.db.lookup_user(user)
 
     def check_mail(self):
-        log.debug("Checking mail")
+#log.debug("Checking mail")
         messages = self.r.get_unread(unset_has_mail = True, update_user = True)
 
         for msg in messages:
@@ -302,7 +301,6 @@ class Database:
         result = self.cur.fetchone()
         return result
 
-###########################################################################
 ##############################################################################
 # Makes stdout and stderr print to the logging module
 def config_logging():
@@ -311,12 +309,12 @@ def config_logging():
     
     # set file logger
     rootLog = logging.getLogger('')
-    rootLog.setLevel(logging.WARNING)
+    rootLog.setLevel(logging.DEBUG)
     
     # make it so requests doesn't show up all the time in our output
     logging.getLogger('urllib3').setLevel(logging.WARNING)
 
-    # apparently on AWS-EC2 requests is used instead of urllib3
+    # apparently on AWS-EC2, requests is used instead of urllib3
     # so we have to silence this again... oh well.
     logging.getLogger('requests').setLevel(logging.CRITICAL)
 
@@ -325,8 +323,8 @@ def config_logging():
                                        '%(lineno)d : %(message)s',
                                    datefmt='%m-%d %H:%M')
     
-    # add filehandler so once the filesize reaches 5MB a new file is 
-    # created, up to 3 files
+    # add filehandler so once the filesize reaches ~5MB a new file is 
+    # created, up to 5 files
     fileHandle = logging.handlers.RotatingFileHandler("crash.log",
                                                       maxBytes=5000000,
                                                       backupCount=5,
@@ -365,7 +363,7 @@ class LoggerWriter:
 
 ###############################################################################
 def connect():
-    log.debug("Logging in...")
+#log.debug("Logging in...")
     r = oauth.login() 
     return r
 
@@ -385,7 +383,7 @@ def main():
                 posts.reply(results)
                 posts.check_votes()
                 
-                log.debug("Sleeping...")
+#log.debug("Sleeping...")
                 time.sleep(60)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
