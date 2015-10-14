@@ -384,25 +384,25 @@ def main():
                 posts.check_votes()
                 
 #log.debug("Sleeping...")
-                time.sleep(30)
+                time.sleep(60)
         
             except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
                 import traceback
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
                 traceback.print_exc()
-                time.sleep(30)
+                time.sleep(60)
                 continue
 
             except Exception as err:
                 import traceback
                 log.warning(err)
                 log.warning(traceback.print_exc())
-                time.sleep(30)
+                time.sleep(60)
                 continue
 
     except KeyboardInterrupt:
-        log.debug("Exiting")
+#log.debug("Exiting")
         exit(0)
 
 
