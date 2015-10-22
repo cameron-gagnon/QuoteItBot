@@ -26,7 +26,7 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s\/u\/-]*([\w-]*)',
+        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s-]*([\/u\/]*[\w_ -]*)',
                                 flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
@@ -66,7 +66,7 @@ class Comments:
             # match will be None if we don't 
             # find the keyword string
             quote = match[0][0]
-            user = "/u/" + match[0][1]
+            user = match[0][1]
 
         except IndexError:
             quote = False 
@@ -88,7 +88,7 @@ class Respond:
     SPAM_LINK = "http://bit.ly/1VvgsUB"
     NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
-    REGEX = re.compile('Quoting (/u/[\w_-]*): ("[\D\d]*")',
+    REGEX = re.compile('Quoting ([\/u\/]*[\w_ -]*): ("[\D\d]*")',
                        flags = re.IGNORECASE  | re.UNICODE)
    
     def __init__(self, r):
@@ -171,7 +171,7 @@ class Respond:
         # check for nsfw sub that the comment was posted on
         # apply shortened url to send the post directly to spam
         f = Filter(self.r)
-        if f.filter_nsfw(comment) and not\
+        if f.filter_nsfw(self.r, comment) and not\
            f.blacklisted_user(username) and not\
            f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
@@ -212,7 +212,7 @@ class Filter:
         self.r = r
         self.db = Database()
 
-    def filter_nsfw(self, comment):
+    def filter_nsfw(self, r, comment):
         subreddit_ID = comment.subreddit_id
         # returns true if the subreddit is over18, AKA NSFW.
         return r.get_info(thing_id(subreddit_ID).over18)
