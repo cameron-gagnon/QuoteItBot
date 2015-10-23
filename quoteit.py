@@ -26,7 +26,7 @@ class Comments:
         # r is the praw Reddit Object
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s-]*([\/u\/]*[\w_ -]*)',
+        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s-]*([\/u\/]*[\w_\' -]*)',
                                 flags = re.IGNORECASE | re.UNICODE)
 
     def get_comments_to_parse(self):
@@ -88,7 +88,7 @@ class Respond:
     SPAM_LINK = "http://bit.ly/1VvgsUB"
     NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
-    REGEX = re.compile('Quoting ([\/u\/]*[\w_ -]*): ("[\D\d]*")',
+    REGEX = re.compile('Quoting ([\/u\/]*[\w_\' -]*): ("[\D\d]*")',
                        flags = re.IGNORECASE  | re.UNICODE)
    
     def __init__(self, r):
