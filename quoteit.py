@@ -31,7 +31,7 @@ class Comments:
                 # QuoteIt! '[quote]' - u/[username]
                 # etc
 
-                quoteit! \s+
+                quoteit! \s*
                 ( ["'].*["'] )*
                 [\s-]*
 
@@ -109,12 +109,11 @@ class Respond:
     )
 
     FOOTER = (
-        # TODO: Experiment with ^(string of text) instead of ^string ^of ^text.
-        "\n\n___\n\n"
-         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "
-         "^be ^submitted ^to ^/r/Quotes! "
-         "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "
-         "^| [^About ^me]({link})"
+         "\n\n___\n\n"
+         "^(If this post receives enough upvotes, it will "
+         "be submitted to /r/Quotes! "
+         "| [Code](https://github.com/cameron-gagnon/quoteitbot) "
+         "| [About me]({link}))"
          #"^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "
     )
 
@@ -144,7 +143,6 @@ class Respond:
 
         try:
             comment.reply(reply_string)
-            # alert user begin queried of query
             log.debug("Reply sucessful!")
 
         except praw.errors.RateLimitExceeded as error:
@@ -206,7 +204,7 @@ class Respond:
 
         title = "[QuoteItBot] " + quote + " - " + username
         # gets lots of submission data and pieces it together 
-        # so we can have the premalink to the top level comment
+        # so we can have the permalink to the top level comment
                         # base url                 what subreddit we in?
         formatted_url = ("https://reddit.com/r/" + str(comment.subreddit) +
                         "/comments/" + comment.link_id[3:] + "/" +
@@ -266,7 +264,7 @@ class Filter:
                 msg.mark_as_read()
 
     def blacklist_users(self, users):
-        """ Inserts users into the database so they are then blacklisted """
+        """ Inserts users into the database so they are blacklisted """
         for user in users:
             self.db.insert_user(user)
 
@@ -385,23 +383,29 @@ def main():
         db = Database()
         while True:
             try:
+                # check for blacklisted users
                 Filter(r).check_mail()
+                # retrive comments that called the bot
                 com = Comments(r)
                 com.get_comments_to_parse()
                 results = com.search_comments()
 
+                # respond to comments
                 posts = Respond(r)
                 posts.reply(results)
+                # check votes and post to /r/quotes if necessary
                 posts.check_votes()
 
                 #log.debug("Sleeping...")
                 time.sleep(60)
 
-            except (exceptions.HTTPError, exceptions.Timeout, exceptions.ConnectionError) as err:
+            except (exceptions.HTTPError,
+                    exceptions.Timeout,
+                    exceptions.ConnectionError) as err:
                 import traceback
                 log.warning("HTTPError, sleeping for 10 seconds")
                 log.warning(err)
-                traceback.print_exc()
+                log.warning(traceback.print_exc())
                 time.sleep(60)
                 continue
 
