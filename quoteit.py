@@ -113,10 +113,9 @@ class Respond:
     PIPE   = "^| "
     FOOTER = ("^(If this post receives enough upvotes, it will "
               "be submitted to /r/Quotes! )")
-    INFO   = ("^([Code](https://github.com/cameron-gagnon/quoteitbot) "
-              "| [About me]({link}))")
+    INFO   = ("[^Code](https://github.com/cameron-gagnon/quoteitbot) "
+              "^| [^About ^me]({link})")
               #"^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "
-    )
 
     def __init__(self, r):
         self.r = r
