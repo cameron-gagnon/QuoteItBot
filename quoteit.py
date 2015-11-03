@@ -17,20 +17,46 @@ from requests import exceptions
 
 class Comments:
     def __init__(self, r):
-        # subreddit to parse through
-        # set to /r/all, but could be
-        # set to a specific sub if needed
-        # r is the praw Reddit Object
+        """
+        subreddit to parse through set to /r/all, but could be set to a
+        specific sub if needed
+
+        'r' is the praw Reddit Object
+        """
         self.r = r
         self.db = Database()
-        self.regex = re.compile('quoteit! ("[\s\S]*")*[\s-]*([\/u\/]*[\w_\' -]*)',
-                                flags = re.IGNORECASE | re.UNICODE)
+        self.regex = re.compile(
+            """
+                # QuoteIt! "[quote]" /u/[username]
+                # QuoteIt! '[quote]' - u/[username]
+                # etc
+
+                quoteit!
+                \s+
+
+                (
+                  ["']
+                  [\s\S]* # TODO: Isn't [\s\S] the same thing as a single dot?
+                  ["']
+                )*
+
+                [\s-]*
+
+                (
+                  [/u/]*    # /u/
+                  [\w_' -]* # username
+                )
+            """,
+            flags = re.IGNORECASE | re.UNICODE | re.VERBOSE,
+        )
 
     def get_comments_to_parse(self):
-        #uses pushshift.io to perform a search of "QuoteIt!"
+        """ uses pushshift.io to perform a search of "QuoteIt!" """
         with requests.Session() as s:
-            request = s.get('https://api.pushshift.io/reddit/search?q'\
-                            '=%22QuoteIt!%22&limit=100')
+            request = s.get(
+                'https://api.pushshift.io/reddit/search?q'
+                '=%22QuoteIt!%22&limit=100'
+            )
 
             json = request.json()
             self.comments = json['data']
