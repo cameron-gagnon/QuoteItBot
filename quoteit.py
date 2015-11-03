@@ -35,9 +35,7 @@ class Comments:
                 \s+
 
                 (
-                  ["']
-                  [\s\S]* # TODO: Isn't [\s\S] the same thing as a single dot?
-                  ["']
+                  ["'].*["']
                 )*
 
                 [\s-]*
