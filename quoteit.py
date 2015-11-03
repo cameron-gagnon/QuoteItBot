@@ -79,10 +79,11 @@ class Comments:
 class Respond:
 
     REPLY_TEXT = "Quoting {user}: {quote}\n\n"
-    FOOTER = "\n\n___\n\n"\
-             "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "\
-             "^be ^submitted ^to ^/r/Quotes! "\
-             "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
+    LINE = "\n\n___\n\n"
+    PIPE = "^| "
+    FOOTER = "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "\
+             "^be ^submitted ^to ^/r/Quotes! "
+    INFO =   "[^Code](https://github.com/cameron-gagnon/quoteitbot) "\
              "^| [^About ^me]({link})"
 #             "^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
     SPAM_LINK = "http://bit.ly/1VvgsUB"
@@ -108,11 +109,12 @@ class Respond:
 
     def reply_quote(self, comment, quote, user):
         comment_author = str(comment.author)
+        self.FOOTER = self.LINE + self.FOOTER + self.PIPE + self.INFO
         reply_string = self.REPLY_TEXT.format(user = user,
                                               quote = quote) +\
                        self.FOOTER.format(link = self.NON_SPAM_LINK)
         
-        log.debug("Replying to " + comment_author +
+        log.debug("\n\nReplying to " + comment_author +
                   " with quote " + quote + " from user " + user)
         
         try:
@@ -171,7 +173,7 @@ class Respond:
         # check for nsfw sub that the comment was posted on
         # apply shortened url to send the post directly to spam
         f = Filter(self.r)
-        if f.filter_nsfw(self.r, comment) and not\
+        if f.filter_nsfw(comment) and not\
            f.blacklisted_user(username) and not\
            f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
@@ -180,15 +182,18 @@ class Respond:
         title = "[QuoteItBot] " + quote + " - " + username
         # gets lots of submission data and pieces it together 
         # so we can have the premalink to the top level comment
-                        # base url                 what subreddit we in?
-        formatted_url = "https://reddit.com/r/" + str(comment.subreddit) +\
+                        # base url                       
+                        # what subreddit we in?
+                        # title of submission
+                        # id of parent comment of the quoteitbot one
+        formatted_url = "https://reddit.com/r/" +\
+                        str(comment.subreddit) +\
                         "/comments/" + comment.link_id[3:] + "/" +\
-                        comment.link_title + "/" + comment.parent_id[3:]           
-                        # title of submission       id of the parent comment of the 
-                                                   # quoteitbot one
+                        comment.link_title + "/" +\
+                        comment.parent_id[3:]
 
         body = "[Original quote source](" + formatted_url + ")." +\
-                self.FOOTER.format(about_me_link)
+                self.LINE + self.INFO.format(link = about_me_link)
 
         try:
             log.debug("Submitting quote: " + title)
@@ -212,13 +217,13 @@ class Filter:
         self.r = r
         self.db = Database()
 
-    def filter_nsfw(self, r, comment):
+    def filter_nsfw(self, comment):
         subreddit_ID = comment.subreddit_id
         # returns true if the subreddit is over18, AKA NSFW.
-        return r.get_info(thing_id(subreddit_ID).over18)
+        return self.r.get_info(thing_id = subreddit_ID).over18
 
     def blacklisted_user(self, user):
-        # returns true if the user is in the database, AKA 'blacklisted'
+        # returns true if user is in the database, AKA 'blacklisted'
         return self.db.lookup_user(user)
 
     def check_mail(self):
