@@ -31,13 +31,8 @@ class Comments:
                 # QuoteIt! '[quote]' - u/[username]
                 # etc
 
-                quoteit!
-                \s+
-
-                (
-                  ["'].*["']
-                )*
-
+                quoteit! \s+
+                ( ["'].*["'] )*
                 [\s-]*
 
                 (
@@ -52,8 +47,9 @@ class Comments:
         """ uses pushshift.io to perform a search of "QuoteIt!" """
         with requests.Session() as s:
             request = s.get(
-                'https://api.pushshift.io/reddit/search?q'
-                '=%22QuoteIt!%22&limit=100'
+                'https://api.pushshift.io/reddit/search'
+                + '?q=%22QuoteIt!%22'
+                + '&limit=100'
             )
 
             json = request.json()
@@ -98,18 +94,29 @@ class Comments:
 
 
 class Respond:
-    REPLY_TEXT = "Quoting {user}: {quote}\n\n"
-    FOOTER = "\n\n___\n\n"\
-             "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "\
-             "^be ^submitted ^to ^/r/Quotes! "\
-             "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "\
-             "^| [^About ^me]({link})"
-             #"^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "\
-    SPAM_LINK = "http://bit.ly/1VvgsUB"
-    NON_SPAM_LINK = "https://reddit.com/r/quotesFAQ"
+    REPLY_TEXT       = "Quoting {user}: {quote}\n\n"
+    SPAM_LINK        = "http://bit.ly/1VvgsUB"
+    NON_SPAM_LINK    = "https://reddit.com/r/quotesFAQ"
     UPVOTE_THRESHOLD = 10
-    REGEX = re.compile('Quoting ([\/u\/]*[\w_\' -]*): ("[\D\d]*")',
-                       flags = re.IGNORECASE  | re.UNICODE)
+
+    REGEX = re.compile(
+        """
+            Quoting \s+
+            ( [/u/]* [\w_' -]* ): \s+
+            (".*")
+        """,
+       flags = re.IGNORECASE  | re.UNICODE | re.VERBOSE,
+    )
+
+    FOOTER = (
+        # TODO: Experiment with ^(string of text) instead of ^string ^of ^text.
+        "\n\n___\n\n"
+         "^If ^this ^post ^receives ^enough ^upvotes, ^it ^will "
+         "^be ^submitted ^to ^/r/Quotes! "
+         "^| [^Code](https://github.com/cameron-gagnon/quoteitbot) "
+         "^| [^About ^me]({link})"
+         #"^| ^Syntax: ^'QuoteIt! ^\"Insert ^quote ^here\" ^/u/username' "
+    )
 
     def __init__(self, r):
         self.r = r
