@@ -220,6 +220,10 @@ class Respond:
             self.r.submit("Quotes", title, text = body)
 
             log.debug("Submission sucessful!")
+
+# TODO UPDATE COMMENT REPLY TO STATE THAT IT HAS BEEN
+# POSTED TO /r/quotes
+
             self.db.insert_post(comment.id)
 
         except praw.errors.RateLimitExceeded as error:
