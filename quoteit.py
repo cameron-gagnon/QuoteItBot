@@ -158,6 +158,18 @@ class Respond:
             log.debug("HTTPError when replying. Sleeping for 10 seconds")
             log.debug(error)
             time.sleep(30)
+    
+    def truncate_quote(self, quote, *args):
+        """ Shorten the quote when the quote is > 286 chars """
+        totalLength = len(quote) 
+        
+        for arg in args:
+            totalLength += len(arg)
+        
+        if (totalLength > 299): # 14 chars are taken up by default formatting
+            quote = quote[:-(totalLength - 299)] + "..." # shorten even more just in
+                                        # case there's a long username
+        return quote
 
     def check_votes(self):
         #log.debug("Checking votes")
@@ -187,6 +199,7 @@ class Respond:
             log.debug(str(match))
             username = match[0][0]
             quote = match [0][1]
+            quote = truncate_quote(quote)
 
         except IndexError:
             log.debug("Not an actual quote comment, index error returned")
@@ -202,7 +215,7 @@ class Respond:
            f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
 
-
+        quote = truncate_quote("[QuoteItBot]", quote, " - ", username)
         title = "[QuoteItBot] " + quote + " - " + username
         # gets lots of submission data and pieces it together 
         # so we can have the permalink to the top level comment
