@@ -162,14 +162,16 @@ class Respond:
     def truncate_quote(self, quote, *args):
         """ Shorten the quote when the quote is > 299 chars """
         totalLength = len(quote) 
-        
+        modified = False
+ 
         for arg in args:
             totalLength += len(arg)
         
-        if (totalLength > 299): # 14 chars are taken up by default formatting
-            quote = quote[:-(totalLength - 296)] + "..." # shorten even more just in
-                                                         # case there's a long username
-        return quote
+        if (totalLength > 299): 
+            quote = quote[:-(totalLength - 295)] + '..."' 
+            modified = True
+                                                         
+        return quote, modified
 
     def check_votes(self):
         #log.debug("Checking votes")
@@ -214,10 +216,9 @@ class Respond:
            f.blacklisted_user(parent_author.author):
             about_me_link = self.SPAM_LINK
 
-        quote = self.truncate_quote(quote, "[QuoteItBot]", " - ", username)
+        quoteTrunc, modified = self.truncate_quote(quote, "[QuoteItBot]", " - ", username)
 
-        print(quote + '\n\n\n\n')
-        title = "[QuoteItBot] " + quote + " - " + username
+        title = "[QuoteItBot] " + quoteTrunc + " - " + username
         # gets lots of submission data and pieces it together 
         # so we can have the permalink to the top level comment
                         # base url                 what subreddit we in?
@@ -227,7 +228,14 @@ class Respond:
                         # title of submission       id of the parent comment of the
                         #                           quoteitbot one
 
-        body = ("[Original quote source](" + formatted_url + ")." +
+        # so we can include the full quote in the body of the 
+        # post instead of the title
+        fullQuote = ""
+        
+        if (modified):
+            fullQuote = quote + '\n\n'
+ 
+        body = (fullQuote + "[Original quote source](" + formatted_url + ")." +
                 self.LINE + self.INFO.format(link = about_me_link))
 
         try:
